@@ -1,10 +1,7 @@
 # Duplicate Finder
 A Python script to detect and manage duplicate image files in a folder. It uses `PySimpleGUI` for the GUI and `Pillow` with `imagehash` for image comparison.
 
----
-
 ## Requirements
-
 Install dependencies with:
 
 ```bash
@@ -14,8 +11,6 @@ pip install Pillow imagehash PySimpleGUI
 ## Settings
 - **HASH_TOLERANCE**: Adjust similarity sensitivity (default: `5`).
 - **SUPPORTED_FORMATS**: Modify supported image formats.
-
----
 
 ## Changelog
 
