@@ -111,35 +111,45 @@ if not duplicates:
     subprocess.Popen([sys.executable] + sys.argv)
     sys.exit()
 
-group_layouts = []
-for group in duplicates:
-    group_elements = []
-    for path in group:
-        thumb = load_image_thumbnail(path)
-        if thumb:
-            try:
-                with Image.open(path) as img: 
-                    resolution = f"{img.width}x{img.height}"
-            except:
-                resolution = "Unknown"
-            
-            row = [
-                sg.Checkbox("", key=f"MARK::{path}", pad=(5, 5)),
-                sg.Image(data=thumb, pad=(5, 5)),
-                sg.Column([
-                    [sg.Text(os.path.basename(path), size=(40, 1), pad=(5, 5))],
-                    [sg.Text(f"Resolution: {resolution}", size=(20, 1), pad=(5, 5))]
-                ], vertical_alignment="center", pad=(5, 5))
-            ]
-            group_elements.append(row)
-    
-    group_layouts.append([sg.Frame(f"Duplicate Group ({len(group)} items)", group_elements, pad=(10, 10))])
+def create_page_layout(groups, page, groups_per_page=50):
+    start = page * groups_per_page
+    end = start + groups_per_page
+    group_layouts = []
 
-layout = [
-    [sg.Column(group_layouts, scrollable=True, vertical_scroll_only=True, size=(800, 600))],
-    [sg.Button("Delete Selected", size=(15, 1)), sg.Button("Close", size=(10, 1))]
-]
+    for group in groups[start:end]:
+        group_elements = []
+        for path in group:
+            thumb = load_image_thumbnail(path)
+            if thumb:
+                try:
+                    with Image.open(path) as img:
+                        resolution = f"{img.width}x{img.height}"
+                except:
+                    resolution = "Unknown"
 
+                row = [
+                    sg.Checkbox("", key=f"MARK::{path}", pad=(5, 5)),
+                    sg.Image(data=thumb, pad=(5, 5)),
+                    sg.Column([
+                        [sg.Text(os.path.basename(path), size=(40, 1), pad=(5, 5))],
+                        [sg.Text(f"Resolution: {resolution}", size=(20, 1), pad=(5, 5))]
+                    ], vertical_alignment="center", pad=(5, 5))
+                ]
+                group_elements.append(row)
+
+        group_layouts.append([sg.Frame(f"Duplicate Group ({len(group)} items)", group_elements, pad=(10, 10))])
+
+    layout = [
+        [sg.Column(group_layouts, scrollable=True, vertical_scroll_only=True, size=(800, 600))],
+        [sg.Button("Previous", size=(10, 1)), sg.Button("Next", size=(10, 1)), sg.Button("Delete Selected", size=(15, 1)), sg.Button("Close", size=(10, 1))]
+    ]
+    return layout
+
+current_page = 0
+groups_per_page = 50
+total_pages = (len(duplicates) + groups_per_page - 1) // groups_per_page
+
+layout = create_page_layout(duplicates, current_page)
 window = sg.Window("Image Duplicate Finder", layout, finalize=True)
 
 while True:
@@ -157,8 +167,33 @@ while True:
                     except Exception as e:
                         sg.popup(f"Error deleting file: {file_to_delete}\n{e}")
                 sg.popup(f"Deleted {len(files_to_delete)} files.")
+                
+                duplicates = [[path for path in group if path not in files_to_delete] for group in duplicates]
+                duplicates = [group for group in duplicates if group] 
+                
+                total_pages = (len(duplicates) + groups_per_page - 1) // groups_per_page
+                
+                if not duplicates:
+                    sg.popup("All duplicates have been processed. Restarting...")
+                    window.close()
+                    subprocess.Popen([sys.executable] + sys.argv)
+                    sys.exit()
+                
+                if current_page >= total_pages:
+                    current_page = max(0, total_pages - 1)
+                
                 window.close()
-                subprocess.Popen([sys.executable] + sys.argv)
-                sys.exit()
+                layout = create_page_layout(duplicates, current_page)
+                window = sg.Window("Image Duplicate Finder", layout, finalize=True)
+    if event == "Next" and current_page < total_pages - 1:
+        current_page += 1
+        window.close()
+        layout = create_page_layout(duplicates, current_page)
+        window = sg.Window("Image Duplicate Finder", layout, finalize=True)
+    if event == "Previous" and current_page > 0:
+        current_page -= 1
+        window.close()
+        layout = create_page_layout(duplicates, current_page)
+        window = sg.Window("Image Duplicate Finder", layout, finalize=True)
 
 window.close()
