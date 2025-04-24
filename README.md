@@ -16,6 +16,7 @@ pip install Pillow imagehash PySimpleGUI
 
 | Version | Changes                                                                                     |
 |---------|---------------------------------------------------------------------------------------------|
+| v1.7  | Added pagination                                        |
 | v1.6  | Added a toggle to include subfolders in the search.                                         |
 | v1.5  | Automatically starts a new subprocess after finding no duplicates or after deletion.        |
 | v1.4  | Improved error handling when deleting files (e.g., file in use by another process).         |
