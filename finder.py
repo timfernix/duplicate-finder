@@ -131,8 +131,9 @@ def create_page_layout(groups, page, groups_per_page=50):
                     sg.Checkbox("", key=f"MARK::{path}", pad=(5, 5)),
                     sg.Image(data=thumb, pad=(5, 5)),
                     sg.Column([
-                        [sg.Text(os.path.basename(path), size=(40, 1), pad=(5, 5))],
-                        [sg.Text(f"Resolution: {resolution}", size=(20, 1), pad=(5, 5))]
+                        [sg.Text(os.path.basename(path), size=(40, 1), pad=(5, 5))],  
+                        [sg.Text(f"Resolution: {resolution}", size=(20, 1), pad=(5, 5))],  
+                        [sg.Text(f"Path: {path}", size=(60, 1), pad=(5, 5))]  
                     ], vertical_alignment="center", pad=(5, 5))
                 ]
                 group_elements.append(row)
@@ -141,7 +142,14 @@ def create_page_layout(groups, page, groups_per_page=50):
 
     layout = [
         [sg.Column(group_layouts, scrollable=True, vertical_scroll_only=True, size=(800, 600))],
-        [sg.Button("Previous", size=(10, 1)), sg.Button("Next", size=(10, 1)), sg.Button("Delete Selected", size=(15, 1)), sg.Button("Close", size=(10, 1))]
+        [
+            sg.Button("Previous", size=(10, 1)),
+            sg.Text(f"Page {page + 1}/{total_pages}", key="PAGE_TEXT", size=(15, 1), justification="center"),
+            sg.Button("Next", size=(10, 1)),
+            sg.Button("Delete Selected", size=(15, 1)),
+            sg.Button("Restart", size=(10, 1)),
+            sg.Button("Close", size=(10, 1))
+        ]
     ]
     return layout
 
@@ -156,6 +164,10 @@ while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED or event == "Close":
         break
+    if event == "Restart":
+        window.close()
+        subprocess.Popen([sys.executable] + sys.argv)  
+        sys.exit()
     if event == "Delete Selected":
         files_to_delete = [key.split("::")[1] for key, value in values.items() if key.startswith("MARK::") and value]
         if files_to_delete:
@@ -187,11 +199,13 @@ while True:
                 window = sg.Window("Image Duplicate Finder", layout, finalize=True)
     if event == "Next" and current_page < total_pages - 1:
         current_page += 1
+        window["PAGE_TEXT"].update(f"Page {current_page + 1}/{total_pages}")
         window.close()
         layout = create_page_layout(duplicates, current_page)
         window = sg.Window("Image Duplicate Finder", layout, finalize=True)
     if event == "Previous" and current_page > 0:
         current_page -= 1
+        window["PAGE_TEXT"].update(f"Page {current_page + 1}/{total_pages}")
         window.close()
         layout = create_page_layout(duplicates, current_page)
         window = sg.Window("Image Duplicate Finder", layout, finalize=True)
