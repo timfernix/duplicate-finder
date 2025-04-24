@@ -5,6 +5,7 @@ import imagehash
 import PySimpleGUI as sg
 from io import BytesIO
 import shlex 
+import subprocess  
 
 # --- Settings ---
 HASH_TOLERANCE = 5  # Hash difference tolerance; lower = stricter match
@@ -111,6 +112,7 @@ while True:
                         sg.popup(f"Error deleting file: {file_to_delete}\n{e}")
                 sg.popup(f"Deleted {len(files_to_delete)} files.")
                 window.close()
-                os.execl(sys.executable, shlex.quote(sys.executable), *map(shlex.quote, sys.argv))
+                subprocess.Popen([sys.executable] + sys.argv)
+                sys.exit()
 
 window.close()
