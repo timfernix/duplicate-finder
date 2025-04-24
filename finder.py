@@ -22,9 +22,18 @@ def load_image_thumbnail(path, max_size=(250, 250)):
     except:
         return None
 
-def get_image_files(folder):
-    return [os.path.join(folder, f) for f in os.listdir(folder)
-            if f.lower().endswith(SUPPORTED_FORMATS)]
+def get_image_files(folder, include_subfolders=False):
+    image_files = []
+    if include_subfolders:
+        for root, _, files in os.walk(folder):
+            image_files.extend(
+                os.path.join(root, f) for f in files if f.lower().endswith(SUPPORTED_FORMATS)
+            )
+    else:
+        image_files = [
+            os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith(SUPPORTED_FORMATS)
+        ]
+    return image_files
 
 def update_progress(current, total):
     progress_bar.UpdateBar(current, total)
@@ -61,11 +70,29 @@ def find_duplicates(paths, progress_callback=None):
 # --- GUI ---
 sg.theme("DarkBlue3")
 
-folder = sg.popup_get_folder("Select folder with images", title="Find Image Duplicates")
-if not folder:
+layout_start = [
+    [sg.Text("Select folder with images:")],
+    [sg.Input(key="FOLDER"), sg.FolderBrowse()],
+    [sg.Checkbox("Include Subfolders", key="INCLUDE_SUBFOLDERS", default=False)],
+    [sg.Button("Start"), sg.Button("Cancel")]
+]
+
+start_window = sg.Window("Find Image Duplicates - Settings", layout_start)
+
+event, values = start_window.read()
+if event in (sg.WIN_CLOSED, "Cancel"):
+    start_window.close()
     exit()
 
-image_paths = get_image_files(folder)
+folder = values["FOLDER"]
+include_subfolders = values["INCLUDE_SUBFOLDERS"]
+start_window.close()
+
+if not folder:
+    sg.popup("No folder selected. Exiting.")
+    exit()
+
+image_paths = get_image_files(folder, include_subfolders)
 
 progress_layout = [
     [sg.Text("Checking images for duplicates...", key="PROGRESS_TEXT")],
