@@ -12,7 +12,7 @@ HASH_TOLERANCE = 5  # Hash difference tolerance; lower = stricter match
 SUPPORTED_FORMATS = (".jpg", ".jpeg", ".png", ".bmp", ".webp")
 
 # --- Helper Functions ---
-def load_image_thumbnail(path, max_size=(150, 150)):
+def load_image_thumbnail(path, max_size=(250, 250)):
     try:
         img = Image.open(path)
         img.thumbnail(max_size)
@@ -26,11 +26,15 @@ def get_image_files(folder):
     return [os.path.join(folder, f) for f in os.listdir(folder)
             if f.lower().endswith(SUPPORTED_FORMATS)]
 
-def find_duplicates(paths):
+def update_progress(current, total):
+    progress_bar.UpdateBar(current, total)
+    progress_text.update(f"Processing image {current}/{total}")
+
+def find_duplicates(paths, progress_callback=None):
     hashes = {}
     duplicates = []
 
-    for path in paths:
+    for i, path in enumerate(paths):
         try:
             img = Image.open(path)
             hash = imagehash.phash(img)
@@ -46,6 +50,9 @@ def find_duplicates(paths):
         except:
             continue
 
+        if progress_callback:
+            progress_callback(i + 1, len(paths))
+
     for group in hashes.values():
         if len(group) > 1:
             duplicates.append(group)
@@ -59,11 +66,23 @@ if not folder:
     exit()
 
 image_paths = get_image_files(folder)
-duplicates = find_duplicates(image_paths)
+
+progress_layout = [
+    [sg.Text("Checking images for duplicates...", key="PROGRESS_TEXT")],
+    [sg.ProgressBar(len(image_paths), orientation='h', size=(50, 20), key="PROGRESS")],
+]
+progress_window = sg.Window("Progress", progress_layout, finalize=True)
+progress_bar = progress_window["PROGRESS"]
+progress_text = progress_window["PROGRESS_TEXT"]
+
+duplicates = find_duplicates(image_paths, progress_callback=update_progress)
+progress_window.close()  
 
 if not duplicates:
     sg.popup("No duplicates found 🎉")
-    exit()
+    progress_window.close()
+    subprocess.Popen([sys.executable] + sys.argv)
+    sys.exit()
 
 group_layouts = []
 for group in duplicates:
@@ -72,8 +91,8 @@ for group in duplicates:
         thumb = load_image_thumbnail(path)
         if thumb:
             try:
-                img = Image.open(path)
-                resolution = f"{img.width}x{img.height}"
+                with Image.open(path) as img: 
+                    resolution = f"{img.width}x{img.height}"
             except:
                 resolution = "Unknown"
             
