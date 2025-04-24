@@ -4,7 +4,7 @@ from PIL import Image
 import imagehash
 import PySimpleGUI as sg
 from io import BytesIO
-import shlex  # Hinzugefügt für sicheres Escaping von Argumenten
+import shlex 
 
 # --- Settings ---
 HASH_TOLERANCE = 5  # Hash difference tolerance; lower = stricter match
