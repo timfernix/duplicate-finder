@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
@@ -35,8 +36,8 @@ def find_duplicates(paths, progress_callback=None):
     duplicates = []
     for i, path in enumerate(paths):
         try:
-            img = Image.open(path)
-            hash = imagehash.phash(img)
+            with Image.open(path) as img:
+                hash = imagehash.phash(img)
             found = False
             for h, group in hashes.items():
                 if hash - h < HASH_TOLERANCE:
@@ -45,7 +46,7 @@ def find_duplicates(paths, progress_callback=None):
                     break
             if not found:
                 hashes[hash] = [path]
-        except:
+        except Exception:
             continue
         if progress_callback:
             progress_callback(i + 1, len(paths))
@@ -118,19 +119,28 @@ class DuplicateFinderApp:
         progress_text.pack(padx=10, pady=5)
 
         def update_progress(current, total):
-            progress_var.set(current)
-            progress_text.config(text=f"Processing image {current}/{total}")
-            progress_win.update_idletasks()
+            def _update():
+                progress_var.set(current)
+                progress_text.config(text=f"Processing image {current}/{total}")
+            self.root.after(0, _update)
 
-        self.duplicates = find_duplicates(self.image_paths, progress_callback=update_progress)
-        progress_win.destroy()
-        if not self.duplicates:
-            messagebox.showinfo("Result", "No duplicates found 🎉")
-            self.build_start_screen()
-            return
-        self.current_page = 0
-        self.selected = set()
-        self.build_results_screen()
+        def worker():
+            duplicates = find_duplicates(self.image_paths, progress_callback=update_progress)
+
+            def on_done():
+                progress_win.destroy()
+                self.duplicates = duplicates
+                if not self.duplicates:
+                    messagebox.showinfo("Result", "No duplicates found 🎉")
+                    self.build_start_screen()
+                    return
+                self.current_page = 0
+                self.selected = set()
+                self.build_results_screen()
+
+            self.root.after(0, on_done)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def build_results_screen(self):
         for widget in self.root.winfo_children():
@@ -192,12 +202,12 @@ class DuplicateFinderApp:
         if path in self.image_cache:
             return self.image_cache[path]
         try:
-            img = Image.open(path)
-            img.thumbnail(max_size)
-            thumb = ImageTk.PhotoImage(img)
+            with Image.open(path) as img:
+                img.thumbnail(max_size)
+                thumb = ImageTk.PhotoImage(img.copy())
             self.image_cache[path] = thumb
             return thumb
-        except:
+        except Exception:
             return None
 
     def toggle_select(self, path, var):

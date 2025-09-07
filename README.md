@@ -16,6 +16,7 @@ pip install Pillow imagehash
 
 | Version | Changes                                                                                     |
 |---------|---------------------------------------------------------------------------------------------|
+| v2.1  | Added threaded scanning to keep the UI responsive and fixed crashes on large folders. |
 | v2.0  | Switched to tkinter and implemented dark design |
 | v1.7  | Added pagination                                        |
 | v1.6  | Added a toggle to include subfolders in the search.                                         |
