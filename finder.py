@@ -183,9 +183,7 @@ class DuplicateFinderApp:
                         resolution = f"{img.width}x{img.height}"
                 except:
                     resolution = "Unknown"
-                # Nur relativer Pfad ab gewähltem Ordner
                 rel_path = os.path.relpath(path, self.folder)
-                # Erstellungsdatum
                 try:
                     ctime = os.path.getctime(path)
                     date_str = datetime.datetime.fromtimestamp(ctime).strftime('%Y-%m-%d %H:%M')
@@ -193,7 +191,7 @@ class DuplicateFinderApp:
                     date_str = "Unknown"
                 tk.Label(group_frame, text=os.path.basename(path), width=40, anchor="w", bg=BTN_BG, fg=DARK_FG, font=("Segoe UI", 10, "bold")).grid(row=i, column=2, sticky="w")
                 tk.Label(group_frame, text=f"Resolution: {resolution}", width=18, anchor="w", bg=BTN_BG, fg=ACCENT, font=("Segoe UI", 10)).grid(row=i, column=3, sticky="w")
-                tk.Label(group_frame, text=rel_path, width=50, anchor="w", bg=BTN_BG, fg="#b0b0b0", font=("Segoe UI", 9, "italic")).grid(row=i, column=4, sticky="w")
+                tk.Label(group_frame, text=rel_path, width=50, anchor="w", bg=BTN_BG, fg="b0b0b0", font=("Segoe UI", 9, "italic")).grid(row=i, column=4, sticky="w")
                 tk.Label(group_frame, text=f"Created: {date_str}", width=20, anchor="w", bg=BTN_BG, fg="#b0b0b0", font=("Segoe UI", 9)).grid(row=i, column=5, sticky="w")
         frame.update_idletasks()
         canvas.config(scrollregion=canvas.bbox("all"))
